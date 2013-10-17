@@ -1,8 +1,5 @@
 package codepath.apps.searchimage;
 
-import java.io.InputStream;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
 
 import org.json.JSONArray;
@@ -51,6 +48,42 @@ public class SearchImage extends Activity {
 		imageAdapter = new ImageResultsArrayAdapter(this, imageResults);
 		gvImages.setAdapter(imageAdapter);
 				
+		gvImages.setOnScrollListener(new EndlessScrollListener() {
+	    @Override
+	    public void onLoadMore(int page, int totalItemsCount) {
+                
+	    	String query = etSearch.getText().toString();
+	    	
+	    	//first check that there is an active search
+	    	if( query!= null && !query.isEmpty())
+	    	{
+				//start filling in images after the current set of images
+				String request_url = "https://ajax.googleapis.com/ajax/services/search/images?"+ "rsz=8"  + 
+				           filters + "&start=" + totalItemsCount + "&v=1.0" + "&q=";
+				
+				AsyncHttpClient client = new AsyncHttpClient();
+
+				client.get(request_url + Uri.encode(query), new JsonHttpResponseHandler() {
+					@Override
+					public void onSuccess(JSONObject response) {
+						JSONArray imageJSONResults = null;
+						try {
+							imageJSONResults = response.getJSONObject(
+									"responseData").getJSONArray("results");
+							
+							imageAdapter.addAll(ImageResult.fromJSONArray(imageJSONResults));
+						}
+						catch (JSONException e) {
+							e.printStackTrace();
+						}
+						
+						
+					}
+				});
+			
+	    	}    
+	    }
+        });
 
 		//setting a click listener for every image to open a big version of the image
 		gvImages.setOnItemClickListener(new OnItemClickListener() {
